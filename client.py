@@ -10,7 +10,7 @@ from tkinter import filedialog
 SETTINGS: Mapping[str, Optional[str]] = {
     'remote_ip': None,  # 远程主机地址
     'remote_port': None,  # 远程主机端口
-    'dir_path': None,  # 保存文件夹路径
+    'dir_path': '',  # 保存文件夹路径
     'file_name': None,  # 保存文件名
 }
 
@@ -72,15 +72,20 @@ def file_name_validate(file_name: str) -> str:
     """
     文件名验证, 确保文件名不会已经存在
     """
-    if os.path.exists(file_name):
+    if file_name.endswith('.pcm'):
+        file_name = file_name[: -4]
+
+    file_ext = '.pcm'
+
+    if os.path.exists(f'{file_name}{file_ext}'):
         idx = 0
         while True:
             new_name = f'{file_name}({idx})'
-            if not os.path.exists(new_name):
-                return new_name
+            if not os.path.exists(f'{new_name}{file_ext}'):
+                return f'{new_name}{file_ext}'
             idx += 1
     else:
-        return file_name
+        return f'{file_name}{file_ext}'
 
 
 def get_file_name() -> str:
@@ -88,8 +93,11 @@ def get_file_name() -> str:
     获取文件名
     """
     folder_path = os.path.abspath(path_var.get())
+
     file_name = file_name_var.get()
-    return file_name_validate(os.path.join(folder_path, file_name))
+    file_path = file_name_validate(os.path.join(folder_path, file_name))
+
+    return file_path
 
 
 def receive_message():
@@ -98,6 +106,8 @@ def receive_message():
 
     客户端会不断接收服务端的数据，直到服务端断开连接或发生异常
     """
+    assert client_socket is not None
+
     try:
         path = get_file_name()
         with open(path, mode='wb') as f:
